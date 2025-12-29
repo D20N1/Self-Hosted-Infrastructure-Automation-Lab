@@ -1,0 +1,169 @@
+services:
+
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - ./config/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    depends_on:
+      - mosquitto
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+
+  esphome:
+    container_name: esphome
+    image: esphome/esphome
+    restart: unless-stopped
+    ports:
+      - "6052:6052"
+    environment:
+      - TZ=Europe/Belgrade
+    volumes:
+      - ./config/esphome:/config
+      - /etc/localtime:/etc/localtime:ro
+    network_mode: host
+
+  adguard:
+    image: adguard/adguardhome
+    container_name: adguard
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "5380:3000"
+      - "443:443"
+    volumes:
+      - ./data/adguard/work:/opt/adguardhome/work
+      - ./data/adguard/conf:/opt/adguardhome/conf
+    restart: unless-stopped
+    environment:
+      - BIND_HOST=0.0.0.0
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    environment:
+      - TZ=Europe/Belgrade
+    volumes:
+      - ./config/mosquitto:/mosquitto/config
+      - ./data/mosquitto:/mosquitto/data
+      - ./log/mosquitto:/mosquitto/log
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+
+  postgres:
+    image: postgres:14
+    container_name: shared_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=shared_db
+      - POSTGRES_USER=shared_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shared_user -d shared_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    network_mode: host
+
+  joplin:
+    image: joplin/server:latest
+    container_name: joplin_server
+    restart: unless-stopped
+    environment:
+      APP_PORT: 22300
+      DB_CLIENT: pg
+      PG_HOST: localhost
+      PG_PORT: 5432
+      PG_DATABASE: joplin
+      PG_USER: shared_user
+      PG_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_BASE_URL: ${APP_BASE_URL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DB_CONNECTION_STRING: postgresql://shared_user:${POSTGRES_PASSWORD}@localhost:5432/joplin
+    ports:
+      - "22300:22300"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data/joplin:/home/joplin/data
+    network_mode: host
+
+  odoo:
+    image: odoo:16
+    container_name: odoo_app
+    restart: unless-stopped
+    environment:
+      - HOST=localhost
+      - PORT=5432
+      - USER=shared_user
+      - PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "8069:8069"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data/odoo:/var/lib/odoo
+    network_mode: host
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    environment:
+      - DISABLE_METADATA_SCAN=false
+      - AUDIOBOOKSHELF_UID=1000
+      - AUDIOBOOKSHELF_GID=1000
+    volumes:
+      - ./config/audiobookshelf:/config
+      - ./media/audiobooks:/knjige:ro
+    ports:
+      - "13378:80"
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  otbr:
+    container_name: otbr
+    image: openthread/border-router
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+      - /dev/net/tun:/dev/net/tun
+    env_file:
+      - ./otbr-env.list
+
+  matter-server:
+    container_name: matter-server
+    image: ghcr.io/home-assistant-libs/python-matter-server:stable
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    volumes:
+      - ./data/matter:/data
+      - /run/dbus:/run/dbus:ro
