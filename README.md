@@ -10,8 +10,8 @@
 * **IoT Protocols:** Matter, Thread, MQTT
 
 ## 🌐 Connectivity & Networking (CGNAT Bypass)
-Due to **CGNAT** (Carrier-Grade NAT) limitations from my ISP, I have implemented a system-wide **Tailscale** service. 
-* **Secure Remote Access:** This allows me to securely manage the Debian host and access web-based dashboards (Odoo, Home Assistant) from any location without port forwarding.
+Due to **CGNAT** (Carrier-Grade NAT) limitations from my ISP, implemented a system-wide **Tailscale** service. 
+* **Secure Remote Access:** This allows me to securely manage the Debian host and access web-based dashboards (Odoo, Home Assistant and NAS as well) from any location without port forwarding, and more secure.
 * **Mesh Networking:** Tailscale provides a secure WireGuard-based overlay network, ensuring encrypted communication between my nodes.
 
 ## 🐳 Core Services (Docker Infrastructure)
