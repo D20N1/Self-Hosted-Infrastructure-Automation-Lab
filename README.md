@@ -9,21 +9,80 @@
 * **Databases:** PostgreSQL 14 (Shared instance for cross-application data)
 * **IoT Protocols:** Matter, Thread, MQTT
 
-## 🌐 Connectivity & Networking (CGNAT Bypass)
-Due to **CGNAT** (Carrier-Grade NAT) limitations from my ISP, implemented a system-wide **Tailscale** service. 
-* **Secure Remote Access:** This allows me to securely manage the Debian host and access web-based dashboards (Odoo, Home Assistant and NAS as well) from any location without port forwarding, and more secure.
-* **Mesh Networking:** Tailscale provides a secure WireGuard-based overlay network, ensuring encrypted communication between my nodes.
+Overview
 
-## 🐳 Core Services (Docker Infrastructure)
-I manage my applications using a **"Configuration as Code"** approach, ensuring portability and rapid deployment:
+This repository contains a self-hosted infrastructure automation lab designed to explore and demonstrate practical aspects of deploying, operating, and maintaining containerized services on a single Linux host.
 
-* **Home Assistant:** Centralized automation engine for IoT devices and sensor data for my home.
-* **Odoo:** Enterprise Resource Planning (ERP) suite for testing business process automation and database integrations.
-* **Joplin Server:** Self-hosted knowledge management system backed by a managed PostgreSQL instance.
-* **AdGuard Home:** Network-wide DNS sinkhole and security management.
-* **Mosquitto:** MQTT broker for low-latency machine-to-machine (M2M) communication.
-* **Matter & OTBR:** Advanced Thread Border Router setup for next-generation IoT connectivity.
+The project focuses on:
 
-## 📁 Repository Structure
-* `docker-compose.yml`: Sanitized orchestration file for the entire stack.
-* `.env`: Template for environment variables and secrets management.
+service orchestration using Docker Compose,
+
+secure remote access to infrastructure,
+
+management of stateful services,
+
+and documenting operational considerations typical for real-world systems.
+
+The environment is intentionally kept simple and transparent, reflecting realistic constraints of small to medium-scale deployments.
+
+System Overview
+
+Operating System: Debian GNU/Linux (stable)
+
+Container Runtime: Docker Engine
+
+Orchestration: Docker Compose
+
+Database: PostgreSQL
+
+Remote Access: Tailscale (WireGuard-based mesh VPN)
+
+All services are deployed on a single host and managed declaratively through version-controlled configuration files.
+
+Architecture
+
+The system follows a single-node architecture:
+
+Remote access (VPN)
+        |
+     Tailscale
+        |
+   Debian Host
+        |
+   Docker Engine
+     ├─ Application containers
+     ├─ PostgreSQL container
+     └─ Supporting services
+
+
+Services are not exposed directly to the public internet.
+
+Remote access is limited to authenticated VPN peers.
+
+Application data is persisted using Docker volumes.
+
+Design Rationale
+Docker Compose
+
+Docker Compose is used to orchestrate services due to its simplicity, predictability, and suitability for single-host environments.
+The project intentionally avoids more complex orchestration platforms where they would not provide clear benefits.
+
+PostgreSQL
+
+PostgreSQL is used as a centralized relational database for stateful services, reflecting common industry practice for reliability and data integrity.
+
+Tailscale
+
+Tailscale enables secure remote access without relying on public IP addresses or port forwarding, which simplifies network configuration and reduces exposure.
+
+Operational Notes
+
+This lab is designed with operational awareness in mind.
+
+Services can be started, stopped, and updated independently.
+
+Logs and service status can be inspected using standard Docker and Linux tools.
+
+Configuration is separated from runtime data through the use of Docker volumes.
+
+While the environment does not implement high availability or automated recovery, it provides a clear foundation for extending such features if required.
