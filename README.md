@@ -43,16 +43,39 @@ Architecture
 
 The system follows a single-node architecture:
 
-Remote access (VPN)
-        |
-     Tailscale
-        |
-   Debian Host
-        |
-   Docker Engine
-     ├─ Application containers
-     ├─ PostgreSQL container
-     └─ Supporting services
+                Remote Client
+             (Laptop / Admin PC)
+                       |
+                       |  Encrypted VPN (WireGuard)
+                       |
+                  Tailscale Network
+                       |
+        ---------------------------------
+        |                               |
+        |        Debian Linux Host      |
+        |                               |
+        |  ┌─────────────────────────┐ |
+        |  |     Docker Engine        | |
+        |  |                         | |
+        |  |  ┌───────────────────┐ | |
+        |  |  | Application       | | |
+        |  |  | Containers        | | |
+        |  |  | (HA, MQTT, etc.)  | | |
+        |  |  └─────────▲─────────┘ | |
+        |  |            |           | |
+        |  |  ┌─────────┴─────────┐ | |
+        |  |  | PostgreSQL        | | |
+        |  |  | Container         | | |
+        |  |  └─────────▲─────────┘ | |
+        |  |            |           | |
+        |  |  ┌─────────┴─────────┐ | |
+        |  |  | Docker Volumes    | | |
+        |  |  | (Persistent Data) | | |
+        |  |  └───────────────────┘ | |
+        |  └─────────────────────────┘ |
+        |                               |
+        ---------------------------------
+
 
 
 Services are not exposed directly to the public internet.
